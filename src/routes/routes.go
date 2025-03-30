@@ -12,6 +12,7 @@ func ToDoRoutes(r *gin.Engine) {
 	r.POST("/signup", controllers.Signup)
 	r.GET("/home", controllers.Home)
 	r.GET("/logout", controllers.Logout)
+	//Cheking if user authorized. if he is not, then other funcs are not available
 	userGroup := r.Group("/todo").Use(midlleware.IsAuthorized())
 	{
 		userGroup.POST("/", controllers.CreateTask)

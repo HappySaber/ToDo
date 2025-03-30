@@ -4,8 +4,6 @@ import (
 	"ToDo/database"
 	"ToDo/models"
 	"ToDo/utils"
-	"fmt"
-	"log"
 	"math"
 	"net/http"
 	"strconv"
@@ -43,7 +41,7 @@ func CreateTask(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	log.Print("UserId:", task.UserId)
+
 	query = `INSERT INTO tasks (title, description, completed, userid, created_at, updated_at) VALUES ($1,$2,$3,$4,NOW(),NOW())`
 	if _, err := database.DB.Exec(query, task.Title, task.Description, task.Completed, task.UserId); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -60,6 +58,7 @@ func GetAllTasks(c *gin.Context) {
 	pageStr := c.DefaultQuery("page", "1")
 	limitStr := c.DefaultQuery("limit", "10")
 
+	//if in url was invalid values we set to default
 	page, err := strconv.Atoi(pageStr)
 	if page < 1 || err != nil {
 		page = 1
@@ -71,6 +70,7 @@ func GetAllTasks(c *gin.Context) {
 		limit = 10
 	}
 
+	//starting value on next page
 	offset := (page - 1) * limit
 
 	var Tasks []models.Task
@@ -119,21 +119,27 @@ func GetTaskById(c *gin.Context) {
 	id := c.Param("id")
 
 	userEmail, err := utils.ExtractUserEmailFromToken(c)
-	fmt.Println(userEmail)
+
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized, couldn't extract user id"})
 		return
 	}
 
 	taskID, err := strconv.Atoi(id)
-	log.Printf("%d", taskID)
+
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
 
-	//	isOwner, err := utils.CheckTaskOwnership(userId, taskID)
-	isOwner, err := utils.CheckTaskOwnership(userEmail, taskID)
+	userid, err := utils.GetIdFromEmail(userEmail)
+
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	isOwner, err := utils.CheckTaskOwnership(userid, taskID)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -208,7 +214,14 @@ func UpdateTask(c *gin.Context) {
 		return
 	}
 
-	isOwner, err := utils.CheckTaskOwnership(userEmail, taskID)
+	userID, err := utils.GetIdFromEmail(userEmail)
+
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	isOwner, err := utils.CheckTaskOwnership(userID, taskID)
 
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
@@ -225,9 +238,9 @@ func UpdateTask(c *gin.Context) {
 		return
 	}
 
-	query := "UPDATE tasks SET title = $1, description = $2, updated_at = NOW() WHERE id = $3 AND email = $4"
+	query := "UPDATE tasks SET title = $1, description = $2, updated_at = NOW() WHERE id = $3"
 
-	_, err = database.DB.Exec(query, task.Title, task.Description, id, userEmail)
+	_, err = database.DB.Exec(query, task.Title, task.Description, id)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Internal server error"})
@@ -240,13 +253,20 @@ func UpdateTask(c *gin.Context) {
 func DeleteTask(c *gin.Context) {
 	id := c.Param("id")
 
-	userId, err := utils.ExtractUserEmailFromToken(c)
+	userEmail, err := utils.ExtractUserEmailFromToken(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
 
 	taskID, err := strconv.Atoi(id)
+	if err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	userId, err := utils.GetIdFromEmail(userEmail)
+
 	if err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return

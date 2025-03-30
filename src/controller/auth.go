@@ -15,11 +15,6 @@ import (
 
 var jwtKey = []byte("sosal?da!")
 
-// {
-//     "email": "user@example.com",
-//     "password": "securePassword"
-// }
-
 func Login(c *gin.Context) {
 	var user models.Auth
 
@@ -39,6 +34,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	//deleting spaces from passwords, if they some way managed to be
 	user.Password = strings.TrimSpace(user.Password)
 	existingUser.Password = strings.TrimSpace(existingUser.Password)
 

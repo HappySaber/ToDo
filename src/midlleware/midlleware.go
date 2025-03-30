@@ -2,7 +2,6 @@ package midlleware
 
 import (
 	"ToDo/utils"
-	"log"
 
 	"github.com/gin-gonic/gin"
 )
@@ -12,7 +11,7 @@ func IsAuthorized() gin.HandlerFunc {
 		cookie, err := c.Cookie("token")
 
 		if err != nil {
-			c.JSON(401, gin.H{"error": "unauthorized 1"})
+			c.JSON(401, gin.H{"error": "Couldn't get cookie 'token'"})
 			c.Abort()
 			return
 		}
@@ -20,8 +19,7 @@ func IsAuthorized() gin.HandlerFunc {
 		claims, err := utils.ParseToken(cookie)
 
 		if err != nil {
-			log.Println("Ошибка при разборе токена:", err)
-			c.JSON(401, gin.H{"error": "unauthorized 2"})
+			c.JSON(401, gin.H{"error": "Не удалось разобрать токен: " + err.Error()})
 			c.Abort()
 			return
 		}

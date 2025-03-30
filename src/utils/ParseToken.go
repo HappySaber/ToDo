@@ -3,6 +3,7 @@ package utils
 import (
 	"ToDo/models"
 	"fmt"
+	"log"
 
 	"github.com/golang-jwt/jwt/v5"
 )
@@ -16,7 +17,7 @@ func ParseToken(tokenString string) (*models.Claims, error) {
 	})
 
 	if err != nil {
-		fmt.Println("Error in previous func", err)
+		log.Printf("Error: %s", err)
 		return nil, err
 	}
 
