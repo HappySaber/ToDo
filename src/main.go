@@ -17,7 +17,7 @@ func main() {
 	}
 
 	database.Init()
-	port := "8000"
+	port := "8080"
 	router := gin.New()
 	routes.ToDoRoutes(router)
 

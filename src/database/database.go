@@ -32,8 +32,10 @@ func BuildDBConfig() *DBConfig {
 		log.Fatalf("Ошибка при преобразовании порта: %v", err)
 	}
 
+	dbHost := GetDBHost()
+
 	dbConfig := DBConfig{
-		Host:     os.Getenv("DB_HOST"),
+		Host:     dbHost,
 		Port:     port,
 		User:     os.Getenv("DB_USER"),
 		DBName:   os.Getenv("DB_NAME"),
@@ -43,7 +45,6 @@ func BuildDBConfig() *DBConfig {
 }
 
 func DbURL(dbConfig *DBConfig) string {
-
 	return fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		dbConfig.Host,
@@ -62,4 +63,12 @@ func Init() {
 		log.Fatalf("Ошибка при проверке подключения к базе данных: %v", err)
 	}
 	log.Println("Успешно подключено к базе данных!")
+}
+
+func GetDBHost() string {
+	// Если запущено в Docker (переменная окружения задана в docker-compose.yml)
+	if os.Getenv("DOCKER_ENV") == "true" {
+		return "db" // имя сервиса в Docker
+	}
+	return "localhost" // для локального запуска
 }
